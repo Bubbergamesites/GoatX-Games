@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="module">
+        import * as BareMux from "https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux/dist/index.mjs";
+        window.BareMux = BareMux;
+    </script>
+
+    <script>
+        async function setupProxy() {
+            if (!('serviceWorker' in navigator)) {
+                console.error("Service Workers are not supported in this browser.");
+                return;
+            }
+
+            try {
+                const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+                await navigator.serviceWorker.ready;
+                
+                if (reg.waiting) {
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+
+                if (window.BareMux) {
+                    const conn = new window.BareMux.BareMuxConnection("./bareworker.js");
+                    let wispUrl = localStorage.getItem("proxServer") || "wss://wisp.mercurywork.shop";
+                    if (wispUrl.endsWith('/')) wispUrl = wispUrl.slice(0, -1);
+                    
+                    await conn.setTransport(
+                        "https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@2.1.28/dist/index.mjs", 
+                        [{ wisp: wispUrl }]
+                    );
+
+                    if (navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({
+                            type: "config",
+                            wispurl: wispUrl,
+                            autoswitch: true
+                        });
+                    }
+                    console.log("NETLII Proxy: Fully Initialized");
+                }
+            } catch (err) {
+                console.error("Proxy Setup Failed:", err);
+            }
+        }
+        window.addEventListener('load', setupProxy);
+    </script>
+    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GoatX | Mainframe</title>
+    
+    <style>
+        :root {
+            --matrix-green: #00ff41;
+            --matrix-dark-green: #003b00;
+            --matrix-bg: #0d0d0d;
+            --terminal-glow: 0 0 10px rgba(0, 255, 65, 0.5);
+            --terminal-glow-bright: 0 0 20px rgba(0, 255, 65, 0.8);
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--matrix-bg);
+            color: var(--matrix-green);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Matrix Rain Canvas */
+        #canvas-matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            opacity: 0.15; /* Subdued so you can read the UI easily */
+            pointer-events: none;
+        }
+
+        /* Top Controls / Download Button */
+        .top-nav {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+
+        .hacker-btn {
+            background: transparent;
+            border: 1px solid var(--matrix-green);
+            color: var(--matrix-green);
+            padding: 10px 20px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: var(--terminal-glow);
+            transition: all 0.3s ease;
+        }
+
+        .hacker-btn:hover {
+            background: var(--matrix-green);
+            color: var(--matrix-bg);
+            box-shadow: var(--terminal-glow-bright);
+        }
+
+        /* Main UI Container */
+        .terminal-panel {
+            position: relative;
+            z-index: 5;
+            background: rgba(13, 13, 13, 0.85);
+            border: 2px solid var(--matrix-green);
+            padding: 40px;
+            text-align: center;
+            box-shadow: var(--terminal-glow);
+            width: 85%;
+            max-width: 600px;
+            box-sizing: border-box;
+        }
+
+        /* Glitch Terminal Header */
+        h1 {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin: 0 0 20px 0;
+            color: #ffffff;
+            text-shadow: var(--terminal-glow-bright);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        h1::before {
+            content: "> ";
+            color: var(--matrix-green);
+        }
+
+        /* Command Line Input */
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .search-wrapper::before {
+            content: "root@goatx:~# ";
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--matrix-green);
+            font-weight: bold;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 15px 15px 15px 135px; /* Spacing adjusted for prompt prefix */
+            box-sizing: border-box;
+            border: 1px solid var(--matrix-green);
+            background: rgba(0, 0, 0, 0.6);
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 1.1rem;
+            outline: none;
+            box-shadow: var(--terminal-glow);
+            transition: border-color 0.4s ease;
+        }
+
+        .search-bar:focus {
+            border-color: #ffffff;
+            box-shadow: var(--terminal-glow-bright);
+        }
+
+        /* Navigation Grid */
+        .nav-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        @media (min-width: 480px) {
+            .nav-row {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            color: var(--matrix-green);
+            text-decoration: none;
+            padding: 15px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--matrix-dark-green);
+            border-color: var(--matrix-green);
+            box-shadow: var(--terminal-glow);
+            transform: translateY(-2px);
+        }
+
+        .icon-circle {
+            font-size: 2rem;
+            color: var(--matrix-green);
+        }
+
+        .icon-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas-matrix"></canvas>
+
+    <div class="top-nav">
+        <a href="/netlii-singlefile-final.html" download="Netlii.html">
+            <button type="button" class="hacker-btn">Download netlii.sys</button>
+        </a>
+    </div>
+
+    <div class="terminal-panel">
+        <h1>GoatX</h1>
+        
+        <div class="search-wrapper">
+            <input type="text" id="home-search" class="search-bar" placeholder="execute_query...">
+        </div>
+
+        <div class="nav-row">
+            <a href="./projects" class="nav-item">
+                <div class="icon-circle">[G]</div>
+                <span class="icon-label">Games</span>
+            </a>
+            <a href="./apps" class="nav-item">
+                <div class="icon-circle">[A]</div>
+                <span class="icon-label">Apps</span>
+            </a>
+            <a href="./chatbot" class="nav-item">
+                <div class="icon-circle">[C]</div>
+                <span class="icon-label">Chat AI</span>
+            </a>
+            <a href="./movies/" class="nav-item">
+                <div class="icon-circle">[M]</div>
+                <span class="icon-label">Movies</span>
+            </a>
+        </div>
+    </div>
+
+    <iframe style="display:none;" src="/Nexus-Proxy/index.html" title="iFrame"></iframe>
+
+    <script>
+        // Matrix Digital Rain Logic
+        const canvas = document.getElementById('canvas-matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const katakana = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789相互会社通信気象庁";
+        const alphabet = katakana.split("");
+
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+
+        const rainDrops = [];
+
+        for (let x = 0; x < columns; x++) {
+            rainDrops[x] = 1;
+        }
+
+        const drawMatrix = () => {
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00ff41';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < rainDrops.length; i++) {
+                const text = alphabet[Math.floor(Math.random() * alphabet.length)];
+                ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+
+                if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    rainDrops[i] = 0;
+                }
+                rainDrops[i]++;
+            }
+        };
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        setInterval(drawMatrix, 30);
+
+        // Search Routing Engine
+        const homeSearch = document.getElementById('home-search');
+
+        function search(query) {
+            const searchEngine = "https://www.google.com/search?q=";
+            
+            if (query.includes('.') && !query.includes(' ')) {
+                let url = query;
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                }
+                window.location.href = `/Nexus-Proxy/#${url}`;
+            } else {
+                window.location.href = `/Nexus-Proxy/#${searchEngine}${encodeURIComponent(query)}`;
+            }
+        }
+
+        homeSearch.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = homeSearch.value.trim();
+                if (query) {
+                    search(query);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
