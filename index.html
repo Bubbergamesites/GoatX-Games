@@ -6,6 +6,62 @@
     <title>GoatX | Mainframe</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <script type="module">
+        import * as BareMux from "https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux/dist/index.mjs";
+        window.BareMux = BareMux;
+    </script>
+
+    <script>
+        async function setupProxy() {
+            if (!('serviceWorker' in navigator)) {
+                console.error("Service Workers are not supported in this browser.");
+                return;
+            }
+
+            try {
+                // 1. Register Scramjet SW under its explicit scope directory
+                const reg = await navigator.serviceWorker.register('./scramjet/sw.js', { scope: './scramjet/' });
+                
+                // 2. Ensure the SW is active and controlling the scope
+                await navigator.serviceWorker.ready;
+                
+                if (reg.waiting) {
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+
+                // 3. Initialize BareMux Connection
+                if (window.BareMux) {
+                    // Update connection path pointing accurately to your scramjet structural directory
+                    const conn = new window.BareMux.BareMuxConnection("./scramjet/bareworker.js");
+                    
+                    let wispUrl = localStorage.getItem("proxServer") || "wss://wisp.mercurywork.shop";
+                    if (wispUrl.endsWith('/')) wispUrl = wispUrl.slice(0, -1);
+                    
+                    await conn.setTransport(
+                        "https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@2.1.28/dist/index.mjs", 
+                        [{ wisp: wispUrl }]
+                    );
+
+                    // 4. Send operational config payload to the active worker controller
+                    if (navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({
+                            type: "config",
+                            wispurl: wispUrl,
+                            autoswitch: true
+                        });
+                    }
+                    
+                    console.log("NETLII Proxy: Fully Initialized [Scramjet Core]");
+                }
+            } catch (err) {
+                console.error("Proxy Setup Failed:", err);
+            }
+        }
+
+        window.addEventListener('load', setupProxy);
+    </script>
+
     <style>
         :root {
             --matrix-green: #00ff41;
