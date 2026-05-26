@@ -284,9 +284,9 @@
                 if (!url.startsWith('http://') && !url.startsWith('https://')) {
                     url = 'https://' + url;
                 }
-                window.location.href = `/scramjet/#${url}`;
+                window.location.href = `/web/#${url}`;
             } else {
-                window.location.href = `/scramjet/#${searchEngine}${encodeURIComponent(query)}`;
+                window.location.href = `/web/#${searchEngine}${encodeURIComponent(query)}`;
             }
         }
 
