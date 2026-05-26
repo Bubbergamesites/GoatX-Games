@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mainframe | Inventory</title>
+    <meta property="og:title" content="SYS_CORE: Database access granted." />
+    <meta property="og:description" content="Accessing decrypted network nodes." />
+    <meta name="description" content="Accessing decrypted network nodes." />
+    <meta name="author" content="GoatX" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="shortcut-icon" href="/favicon.ico" />
+    
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <script src="/js/main.js"></script>
+    <style>
+      :root {
+        --matrix-green: #00ff41;
+        --dark-green: #003b00;
+        --terminal-bg: rgba(0, 5, 0, 0.85);
+        --glow-effect: 0 0 10px rgba(0, 255, 65, 0.4), 0 0 20px rgba(0, 255, 65, 0.2);
+        --card-bg: rgba(0, 15, 0, 0.9);
+      }
+
+      body {
+        background-color: #000000;
+        color: var(--matrix-green);
+        font-family: "Share Tech Mono", monospace;
+        margin: 0;
+        padding: 40px 20px;
+        box-sizing: border-box;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Background Matrix Rain Canvas */
+      #matrix-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: var(--terminal-bg);
+        border: 2px solid var(--matrix-green);
+        box-shadow: var(--glow-effect), inset 0 0 15px rgba(0, 255, 65, 0.1);
+        padding: 40px;
+        border-radius: 4px;
+        position: relative;
+      }
+
+      .container::before {
+        content: "SYS_INDEX // ENCRYPTED_FILES_LOADED";
+        position: absolute;
+        top: 8px;
+        left: 15px;
+        font-size: 0.8rem;
+        opacity: 0.6;
+        letter-spacing: 1px;
+      }
+
+      h1.page-title {
+        text-align: center;
+        font-size: 3.5rem;
+        font-weight: normal;
+        letter-spacing: 2px;
+        margin-bottom: 30px;
+        color: #ffffff;
+        text-shadow: 0 0 10px var(--matrix-green), 0 0 20px var(--matrix-green);
+        text-transform: uppercase;
+      }
+
+      /* Command Line Style Search Bar Container */
+      .search-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto 40px auto;
+      }
+
+      .search-wrapper::before {
+        content: "";
+        position: absolute;
+        left: 15px;
+        top: 0;
+        line-height: 50px;
+        color: var(--matrix-green);
+        font-size: 1.1rem;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 14px 15px 14px 185px; /* Offset to clear terminal path text */
+        border: 1px solid var(--matrix-green);
+        border-radius: 2px;
+        font-size: 1.1rem;
+        font-family: "Share Tech Mono", monospace;
+        background-color: rgba(0, 20, 0, 0.6);
+        color: #ffffff;
+        text-shadow: 0 0 5px var(--matrix-green);
+        box-shadow: inset 0 0 5px rgba(0, 255, 65, 0.2);
+        outline: none;
+      }
+
+      input[type="text"]:focus {
+        box-shadow: var(--glow-effect), inset 0 0 8px rgba(0, 255, 65, 0.4);
+      }
+
+      /* Cyber Hack Grid Layout */
+      .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 25px;
+        margin-bottom: 50px;
+      }
+
+      /* Cyber Node Card */
+      .game-link {
+        text-decoration: none;
+        display: block;
+        transition: all 0.2s ease;
+      }
+
+      .game-link:hover {
+        transform: translateY(-5px);
+      }
+
+      .game-tile {
+        background-color: var(--card-bg);
+        color: var(--matrix-green);
+        border: 1px solid var(--matrix-green);
+        border-radius: 2px;
+        padding: 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+      }
+
+      .game-link:hover .game-tile {
+        box-shadow: var(--glow-effect);
+        background-color: rgba(0, 30, 0, 0.8);
+      }
+
+      .game-icon-wrapper {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background-color: #000000;
+        border: 1px solid rgba(0, 255, 65, 0.3);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 15px;
+      }
+
+      .game-icon {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: grayscale(40%) contrast(120%);
+      }
+
+      /* Typography Override to Terminal Styling */
+      .product-info {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+      }
+
+      .game-title {
+        font-size: 1.3rem;
+        font-weight: normal;
+        text-transform: uppercase;
+        margin: 0 0 6px 0;
+        letter-spacing: 0.5px;
+        color: #ffffff;
+        text-shadow: 0 0 3px var(--matrix-green);
+        text-align: left;
+      }
+
+      .product-category {
+        font-size: 0.85rem;
+        color: rgba(0, 255, 65, 0.6);
+        margin-bottom: 12px;
+        text-align: left;
+      }
+
+      .product-price {
+        font-size: 1.1rem;
+        color: var(--matrix-green);
+        text-align: left;
+        margin-top: auto;
+        border-top: 1px dashed rgba(0, 255, 65, 0.3);
+        padding-top: 8px;
+      }
+
+      /* Hacker Interface Action Elements */
+      .home-btn-container {
+        text-align: center;
+        margin-top: 40px;
+      }
+
+      .ikea-btn {
+        display: inline-block;
+        cursor: pointer;
+        background-color: transparent;
+        border: 1px solid var(--matrix-green);
+        color: var(--matrix-green);
+        font-family: "Share Tech Mono", monospace;
+        padding: 12px 30px;
+        font-size: 1.1rem;
+        text-decoration: none;
+        border-radius: 2px;
+        text-transform: uppercase;
+        transition: all 0.2s ease;
+      }
+
+      .ikea-btn:hover {
+        background-color: var(--matrix-green);
+        color: #000000;
+        box-shadow: var(--glow-effect);
+      }
+
+      /* Matrix Console Styled Action Button */
+      #back-to-top {
+        display: none;
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        cursor: pointer;
+        background-color: #000000;
+        color: var(--matrix-green);
+        border: 1px solid var(--matrix-green);
+        padding: 10px 18px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        border-radius: 2px;
+        box-shadow: var(--glow-effect);
+      }
+
+      #back-to-top:hover {
+        background-color: var(--matrix-green);
+        color: #000000;
+      }
+
+      /* Cybernetic Page Loader Override */
+      #loader {
+        display: block;
+        border: 3px dashed rgba(0, 255, 65, 0.2);
+        border-top: 3px solid var(--matrix-green);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 0.8s linear infinite;
+        margin: 40px auto;
+        box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="matrix-bg"></canvas>
+
+    <div class="container">
+      <h1 class="page-title">SYSTEM_CORES</h1>
+
+      <div class="search-wrapper">
+        <input type="text" id="search" onkeyup="searchGames()" placeholder="awaiting_target_query" autocomplete="off" />
+      </div>
+
+      <div id="loader"></div>
+      
+      <div id="game-container" class="product-grid"></div>
+
+      <div class="home-btn-container">
+        <a href="/index.html" style="text-decoration: none;">
+          <button class="ikea-btn">[ ESC ] Return to Mainframe</button>
+        </a>
+      </div>
+    </div>
+
+    <button id="back-to-top">↑ SYS_TOP</button>
+
+    <script>
+      const canvas = document.getElementById('matrix-bg');
+      const ctx = canvas.getContext('2d');
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      const matrixChars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890ABCDEF".split("");
+      const fontSize = 16;
+      let columns = canvas.width / fontSize;
+      let dropPositions = Array(Math.floor(columns)).fill(1);
+
+      function drawMatrixRain() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#00ff41';
+        ctx.font = fontSize + 'px "Share Tech Mono", monospace';
+
+        for (let i = 0; i < dropPositions.length; i++) {
+          const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+          const x = i * fontSize;
+          const y = dropPositions[i] * fontSize;
+
+          if(Math.random() > 0.98) {
+            ctx.fillStyle = '#ffffff'; // White spark effect on top drops
+          } else {
+            ctx.fillStyle = '#00ff41';
+          }
+
+          ctx.fillText(char, x, y);
+
+          if (y > canvas.height && Math.random() > 0.975) {
+            dropPositions[i] = 0;
+          }
+          dropPositions[i]++;
+        }
+      }
+      setInterval(drawMatrixRain, 33);
+    </script>
+
+    <script>
+      let games = [];
+
+      // Reusable component generation function matching your system architecture
+      function createProductCard(project) {
+        const game = document.createElement("a");
+        game.href = project.link;
+        game.className = "game-link";
+        game.innerHTML = `
+          <div class="game-tile">
+            <div class="game-icon-wrapper">
+              <img class="game-icon" src="${project.imgSrc}" alt="${project.title}" loading="lazy" />
+            </div>
+            <div class="product-info">
+              <h2 class="game-title">${project.title}</h2>
+              <div class="product-category">// node_classification: active</div>
+              <div class="product-price">STATUS: UNLOCKED <span>// 0.00ms</span></div>
+            </div>
+          </div>`;
+        return game;
+      }
+
+      // Initial Fetch
+      fetch("config/games.json")
+        .then((response) => response.json())
+        .then((data) => {
+          games = data;
+          const container = document.getElementById("game-container");
+          data.forEach((project) => {
+            container.appendChild(createProductCard(project));
+          });
+          document.getElementById("loader").style.display = "none";
+        })
+        .catch((error) => {
+          console.error("SYS_CRIT: Node extraction failure ->", error);
+          document.getElementById("loader").style.display = "none";
+        });
+
+      // Filter Search System
+      function searchGames() {
+        const input = document.getElementById("search");
+        const filter = input.value.toUpperCase();
+        const container = document.getElementById("game-container");
+        container.innerHTML = "";
+        
+        games
+          .filter((game) => game.title.toUpperCase().includes(filter))
+          .forEach((project) => {
+            container.appendChild(createProductCard(project));
+          });
+      }
+
+      // Back to top implementation
+      const backToTopButton = document.getElementById('back-to-top');
+      window.onscroll = function () {
+        if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+          backToTopButton.style.display = "block";
+        } else {
+          backToTopButton.style.display = "none";
+        }
+      };
+
+      backToTopButton.onclick = function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+    </script>
+  </body>
+</html>

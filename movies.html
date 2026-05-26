@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mainframe | Transmissions</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --matrix-green: #00ff41;
+            --dark-green: #003b00;
+            --terminal-bg: rgba(0, 5, 0, 0.85);
+            --card-bg: rgba(0, 15, 0, 0.9);
+            --glow-effect: 0 0 10px rgba(0, 255, 65, 0.4), 0 0 20px rgba(0, 255, 65, 0.2);
+            --accent: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Share Tech Mono", monospace;
+            background-color: #000000;
+            min-height: 100vh;
+            color: var(--matrix-green);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            overflow-x: hidden;
+        }
+
+        /* Live Matrix Rain Background Canvas */
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+        }
+
+        /* Top Left Info Marker */
+        .disclaimer-tag {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 9999;
+            font-size: 11px;
+            font-weight: normal;
+            color: var(--matrix-green);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.6;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 8px;
+            border: 1px dashed rgba(0, 255, 65, 0.3);
+            border-radius: 2px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--terminal-bg);
+            border: 2px solid var(--matrix-green);
+            box-shadow: var(--glow-effect), inset 0 0 15px rgba(0, 255, 65, 0.1);
+            padding: 40px;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .container::before {
+            content: "MEDIA_RECEIVER // NET_STRM_ONLINE";
+            position: absolute;
+            top: 8px;
+            left: 15px;
+            font-size: 0.8rem;
+            opacity: 0.6;
+            letter-spacing: 1px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 45px;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: normal;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            color: #ffffff;
+            text-shadow: 0 0 10px var(--matrix-green), 0 0 20px var(--matrix-green);
+            text-transform: uppercase;
+        }
+
+        /* Terminal Command Entry Wrapper */
+        .search-container {
+            position: relative;
+            max-width: 520px;
+            margin: 0 auto 30px;
+        }
+
+        .search-container::before {
+            content: "";
+            position: absolute;
+            left: 15px;
+            top: 0;
+            line-height: 50px;
+            color: var(--matrix-green);
+            font-size: 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 50px;
+            border-radius: 2px;
+            border: 1px solid var(--matrix-green);
+            padding: 0 20px 0 135px; /* Offset to bypass user line text */
+            background: rgba(0, 20, 0, 0.6);
+            color: #ffffff;
+            font-size: 1rem;
+            font-family: "Share Tech Mono", monospace;
+            outline: none;
+            box-shadow: inset 0 0 5px rgba(0, 255, 65, 0.2);
+            text-shadow: 0 0 5px var(--matrix-green);
+        }
+
+        .search-input:focus {
+            box-shadow: var(--glow-effect), inset 0 0 8px rgba(0, 255, 65, 0.4);
+        }
+
+        /* High Efficiency Selection Buttons */
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .filter-btn {
+            padding: 10px 18px;
+            border-radius: 2px;
+            border: 1px solid var(--matrix-green);
+            background: transparent;
+            color: var(--matrix-green);
+            font-family: "Share Tech Mono", monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: var(--matrix-green);
+            color: #000000;
+            box-shadow: var(--glow-effect);
+        }
+
+        /* High Efficiency Product Catalog Display Grid */
+        .movies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        /* Cybernetic Node Frame Styles */
+        .movie-card {
+            background: var(--card-bg);
+            border: 1px solid var(--matrix-green);
+            border-radius: 2px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .movie-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--glow-effect);
+            background-color: rgba(0, 30, 0, 0.8);
+        }
+
+        .movie-poster {
+            width: 100%;
+            aspect-ratio: 2 / 3;
+            object-fit: cover;
+            background-color: #000000;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+            filter: grayscale(20%) contrast(110%);
+        }
+
+        .movie-info {
+            padding: 16px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .movie-title {
+            font-size: 1.15rem;
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            color: #ffffff;
+            text-shadow: 0 0 3px var(--matrix-green);
+            line-height: 1.3;
+        }
+
+        .movie-date {
+            font-size: 0.85rem;
+            color: rgba(0, 255, 65, 0.6);
+            margin-bottom: 12px;
+        }
+
+        .movie-rating {
+            font-size: 0.9rem;
+            color: var(--matrix-green);
+            margin-top: auto;
+            border-top: 1px dashed rgba(0, 255, 65, 0.3);
+            padding-top: 8px;
+            align-self: fill;
+            width: 100%;
+        }
+
+        /* Intercept Overlay Display Monitor */
+        .player-container {
+            position: fixed;
+            inset: 0;
+            background: #000000;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .player-container.show {
+            display: flex;
+        }
+
+        .player-header {
+            padding: 15px 25px;
+            background: #000500;
+            border-bottom: 2px solid var(--matrix-green);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            height: 70px;
+            flex-shrink: 0;
+        }
+
+        .player-title {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            color: #ffffff;
+            text-shadow: 0 0 5px var(--matrix-green);
+        }
+
+        .player-wrapper {
+            flex: 1;
+            width: 100%;
+            height: calc(100vh - 70px);
+            background: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: contain;
+            border: 1px solid var(--matrix-green);
+            border-radius: 2px;
+            background-color: #000000;
+            box-shadow: var(--glow-effect);
+        }
+
+        .player-controls-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-grow: 1;
+            justify-content: center;
+        }
+
+        .tv-controls {
+            display: none;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .server-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Matrix Dropdown Command Elements */
+        select.filter-btn {
+            padding: 8px 12px;
+            height: auto;
+            font-size: 0.85rem;
+            outline: none;
+            border-radius: 2px;
+            background-color: #000000;
+            color: var(--matrix-green);
+            border: 1px solid var(--matrix-green);
+            font-family: "Share Tech Mono", monospace;
+        }
+
+        select.filter-btn option {
+            background: #001500;
+            color: var(--matrix-green);
+        }
+
+        .close-btn {
+            background: transparent;
+            color: var(--matrix-green);
+            border: 1px solid var(--matrix-green);
+            width: 40px;
+            height: 40px;
+            border-radius: 2px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: var(--matrix-green);
+            color: #000000;
+            box-shadow: var(--glow-effect);
+        }
+
+        /* Home Button Row Controls */
+        .home-btn-container {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+
+        .home-btn {
+            display: inline-block;
+            cursor: pointer;
+            background-color: transparent;
+            border: 1px solid var(--matrix-green);
+            color: var(--matrix-green);
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            text-decoration: none;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            font-family: "Share Tech Mono", monospace;
+        }
+
+        .home-btn:hover {
+            background-color: var(--matrix-green);
+            color: #000000;
+            box-shadow: var(--glow-effect);
+        }
+
+        /* Pagination Dynamic Footers */
+        #pagination-container button {
+            padding: 8px 16px;
+            border-radius: 2px;
+            border: 1px solid var(--matrix-green);
+            background: transparent;
+            color: var(--matrix-green);
+            font-family: "Share Tech Mono", monospace;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        #pagination-container button:hover:not(:disabled) {
+            background: var(--matrix-green);
+            color: #000000;
+            box-shadow: var(--glow-effect);
+        }
+
+        #pagination-container button:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            border-color: rgba(0, 255, 65, 0.3);
+        }
+
+        #loading {
+            text-shadow: 0 0 5px var(--matrix-green);
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="matrix-bg"></canvas>
+
+    <div class="disclaimer-tag">
+        SECURE LINK // EXTERNAL ENGINE P2P CORRELATION
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>TRANSMISSIONS</h1>
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" placeholder="awaiting_target_parameters...">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="popular">POPULAR</button>
+                <button class="filter-btn" data-filter="trending">TRENDING</button>
+                <button class="filter-btn" data-filter="top_rated">TOP_RATED</button>
+                <button class="filter-btn" data-filter="now_playing">NOW_PLAYING</button>
+                <button class="filter-btn" data-filter="upcoming">UPCOMING</button>
+            </div>
+        </div>
+
+        <div id="loading" style="text-align: center; padding: 50px; font-size: 18px; text-transform: uppercase; display: none;">CRR_LOG: Querying catalog databanks...</div>
+        <div id="moviesGrid" class="movies-grid"></div>
+        <div id="pagination" style="display: flex; justify-content: center; margin-bottom: 30px;"></div>
+
+        <div class="home-btn-container">
+            <a href="/index.html" style="text-decoration: none;">
+                <button class="home-btn">[ ESC ] Return to Mainframe</button>
+            </a>
+        </div>
+    </div>
+
+    <div class="player-container" id="playerContainer">
+        <div class="player-header">
+            <div class="player-title" id="playerTitle">STREAMS_LOADING...</div>
+
+            <div class="player-controls-wrapper">
+                <div id="tv-controls" class="tv-controls">
+                    <select id="seasonSelect" class="filter-btn"></select>
+                    <select id="episodeSelect" class="filter-btn"></select>
+                </div>
+
+                <div class="server-controls">
+                    <select id="serverSelect" class="filter-btn">
+                        <option value="vidrock">SERVER_01 (VidRock)</option>
+                        <option value="cinezo">SERVER_02 (Cinezo)</option>
+                        <option value="vidfast">SERVER_03 (Vidfast)</option>
+                        <option value="videasy">SERVER_04 (Videasy)</option>
+                        <option value="111movies">SERVER_05 (111movies)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="close-btn" id="closeBtn">✕</button>
+        </div>
+        <div class="player-wrapper">
+            <iframe id="playerIframe" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen=""></iframe>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const matrixChars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓ1234567890ABCDEF:*+-<>".split("");
+        const fontSize = 14;
+        let columns = canvas.width / fontSize;
+        let dropPositions = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrixRain() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00ff41';
+            ctx.font = fontSize + 'px "Share Tech Mono", monospace';
+
+            for (let i = 0; i < dropPositions.length; i++) {
+                const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                const x = i * fontSize;
+                const y = dropPositions[i] * fontSize;
+
+                if(Math.random() > 0.98) {
+                    ctx.fillStyle = '#ffffff';
+                } else {
+                    ctx.fillStyle = '#00ff41';
+                }
+
+                ctx.fillText(char, x, y);
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    dropPositions[i] = 0;
+                }
+                dropPositions[i]++;
+            }
+        }
+        setInterval(drawMatrixRain, 33);
+    </script>
+
+    <script>
+        const k = "2713804610e1e236b1cf44bfac3a7776",
+            b = "https://api.themoviedb.org/3",
+            i = "https://image.tmdb.org/t/p/w500";
+        let f = "popular",
+            p = 1,
+            t = null,
+            s = null;
+        const l = document.getElementById('loading'),
+            g = document.getElementById('moviesGrid'),
+            q = document.getElementById('searchInput'),
+            fb = document.querySelectorAll('.filter-btn'),
+            pc = document.getElementById('playerContainer'),
+            ifm = document.getElementById('playerIframe'),
+            pt = document.getElementById('playerTitle'),
+            cb = document.getElementById('closeBtn'),
+            srvSel = document.getElementById('serverSelect');
+
+        let currentType = 'movie';
+        let currentId = null;
+
+        load();
+
+        fb.forEach(x => {
+            if (x.tagName === 'BUTTON') {
+                x.onclick = () => {
+                    fb.forEach(y => y.classList.remove('active'));
+                    x.classList.add('active');
+                    f = x.dataset.filter;
+                    p = 1;
+                    load()
+                }
+            }
+        });
+
+        q.oninput = e => {
+            clearTimeout(s);
+            let v = e.target.value.trim();
+            if (!v) {
+                p = 1;
+                load();
+                return
+            }
+            s = setTimeout(() => search(v), 600)
+        };
+        cb.onclick = () => {
+            pc.classList.remove('show');
+            ifm.src = '';
+            t = null;
+        };
+
+        srvSel.onchange = () => {
+            const sSel = document.getElementById('seasonSelect');
+            const eSel = document.getElementById('episodeSelect');
+            const season = sSel.value || 1;
+            const episode = eSel.value || 1;
+
+            if (currentId) {
+                updatePlayer(currentType, currentId, season, episode);
+            }
+        };
+
+        function load() {
+            l.style.display = 'block';
+            g.innerHTML = '';
+            let u = f === 'popular' ? `${b}/movie/popular?api_key=${k}&page=${p}` :
+                f === 'trending' ? `${b}/trending/all/day?api_key=${k}&page=${p}` :
+                f === 'top_rated' ? `${b}/movie/top_rated?api_key=${k}&page=${p}` :
+                f === 'now_playing' ? `${b}/movie/now_playing?api_key=${k}&page=${p}` :
+                `${b}/movie/upcoming?api_key=${k}&page=${p}`;
+            fetch(u).then(r => r.json()).then(d => show(d.results, d.total_pages))
+        }
+
+        function search(v) {
+            l.style.display = 'block';
+            g.innerHTML = '';
+            fetch(`${b}/search/multi?api_key=${k}&query=${encodeURIComponent(v)}&page=${p}`).then(r => r.json()).then(d => show(d.results, d.total_pages))
+        }
+
+        function show(m, tp) {
+            l.style.display = 'none';
+            g.innerHTML = '';
+            if (!m.length) {
+                g.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px;font-weight:700;">// SYS_INFO: Empty query response. No nodes discovered.</div>';
+                return
+            }
+            m.forEach(mv => {
+                if (!mv.poster_path) return;
+                let c = document.createElement('div');
+                c.className = 'movie-card';
+
+                let im = document.createElement('img');
+                im.className = 'movie-poster';
+                im.src = i + mv.poster_path;
+                im.alt = mv.title || mv.name;
+                im.loading = "lazy";
+
+                let inf = document.createElement('div');
+                inf.className = 'movie-info';
+
+                let ti = document.createElement('div');
+                ti.className = 'movie-title';
+                ti.textContent = mv.title || mv.name;
+
+                let dt = document.createElement('div');
+                dt.className = 'movie-date';
+                dt.textContent = mv.release_date || mv.first_air_date || '—';
+
+                let ra = document.createElement('div');
+                ra.className = 'movie-rating';
+                ra.textContent = `INDEX_VAL: ⭐ ${mv.vote_average?mv.vote_average.toFixed(1):'—'}`;
+
+                inf.append(ti, dt, ra);
+                c.append(im, inf);
+                c.onclick = () => open(mv);
+                g.appendChild(c)
+            });
+            if (tp > 1) pag(tp)
+        }
+
+        function pag(tp) {
+            let d = document.createElement('div');
+            d.id = 'pagination-container';
+            d.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:15px;margin:20px 0';
+
+            let prev = document.createElement('button');
+            prev.textContent = '<< PREV_NODE';
+            prev.disabled = p === 1;
+            prev.onclick = () => {
+                if (p > 1) {
+                    p--;
+                    q.value ? search(q.value) : load();
+                    scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+
+            let next = document.createElement('button');
+            next.textContent = 'NEXT_NODE >>';
+            next.disabled = p === tp;
+            next.onclick = () => {
+                if (p < tp) {
+                    p++;
+                    q.value ? search(q.value) : load();
+                    scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+
+            let info = document.createElement('span');
+            info.textContent = `BLOCK ${p} // ${tp}`;
+            info.style.cssText = 'font-size:0.9rem;text-transform:uppercase;color: var(--matrix-green);'
+
+            d.append(prev, info, next);
+            document.getElementById('pagination').innerHTML = '';
+            document.getElementById('pagination').appendChild(d)
+        }
+
+        function open(mv) {
+            t = mv;
+            pt.textContent = mv.title || mv.name;
+            pc.classList.add('show');
+
+            const tvControls = document.getElementById('tv-controls');
+
+            let type = mv.media_type;
+            if (!type) {
+                type = mv.name ? 'tv' : 'movie';
+            }
+
+            currentType = type;
+            currentId = mv.id;
+
+            if (type === 'tv') {
+                tvControls.style.display = 'flex';
+                setupTvSelectors(mv.id);
+                updatePlayer('tv', mv.id, 1, 1);
+            } else {
+                tvControls.style.display = 'none';
+                updatePlayer('movie', mv.id);
+            }
+        }
+
+        function updatePlayer(type, id, s = 1, e = 1) {
+            const selectedServer = srvSel.value;
+
+            if (selectedServer === 'vidfast') {
+                if (type === 'tv') {
+                    ifm.src = `https://vidfast.pro/tv/${id}/${s}/${e}`;
+                } else {
+                    ifm.src = `https://vidfast.pro/movie/${id}`;
+                }
+            } else if (selectedServer === 'cinezo') {
+                if (type === 'tv') {
+                    ifm.src = `https://api.cinezo.net/tv/${id}/${s}/${e}`;
+                } else {
+                    ifm.src = `https://api.cinezo.net/movie/${id}`;
+                }
+            } else if (selectedServer === 'videasy') {
+                if (type === 'tv') {
+                    ifm.src = `https://player.videasy.net/tv/${id}/${s}/${e}`;
+                } else {
+                    ifm.src = `https://player.videasy.net/movie/${id}`;
+                }
+            } else if (selectedServer === '111movies') {
+                if (type === 'tv') {
+                    ifm.src = `https://111movies.net/tv/${id}&tmdb=1&s=${s}&e=${e}`;
+                } else {
+                    ifm.src = `https://111movies.net/movie/${id}&tmdb=1`;
+                }
+            } else {
+                if (type === 'tv') {
+                    ifm.src = `https://vidrock.ru/tv/${id}/${s}/${e}`;
+                } else {
+                    ifm.src = `https://vidrock.ru/movie/${id}`;
+                }
+            }
+        }
+
+        async function setupTvSelectors(id) {
+            const sSel = document.getElementById('seasonSelect');
+            const eSel = document.getElementById('episodeSelect');
+
+            const res = await fetch(`${b}/tv/${id}?api_key=${k}`);
+            const data = await res.json();
+
+            sSel.innerHTML = '';
+            data.seasons.forEach(s => {
+                if (s.season_number === 0) return;
+                sSel.innerHTML += `<option value="${s.season_number}">SEASON ${s.season_number}</option>`;
+            });
+
+            sSel.onchange = () => updateEpisodes(id, sSel.value);
+            updateEpisodes(id, 1);
+        }
+
+        async function updateEpisodes(id, sNum) {
+            const eSel = document.getElementById('episodeSelect');
+            const res = await fetch(`${b}/tv/${id}/season/${sNum}?api_key=${k}`);
+            const data = await res.json();
+
+            eSel.innerHTML = '';
+            data.episodes.forEach(e => {
+                eSel.innerHTML += `<option value="${e.episode_number}">EP ${e.episode_number}: ${e.name}</option>`;
+            });
+
+            eSel.onchange = () => updatePlayer('tv', id, sNum, eSel.value);
+        }
+    </script>
+</body>
+
+</html>
