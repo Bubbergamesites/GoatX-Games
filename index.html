@@ -7,63 +7,70 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
-   <script type="module">
-    import * as BareMux from "https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux/dist/index.mjs";
-    window.BareMux = BareMux;
-</script>
+    <script type="module">
+        import * as BareMux from "https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux/dist/index.mjs";
+        window.BareMux = BareMux;
+    </script>
 
-<script>
-    async function setupProxy() {
-        if (!('serviceWorker' in navigator)) {
-            console.error("Service Workers are not supported in this browser.");
-            return;
-        }
-
-        try {
-            // 1. Register the Service Worker
-            const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-            
-            // 2. Ensure the SW is active and controlling the page
-            await navigator.serviceWorker.ready;
-            
-            // Force activation if there's a waiting worker
-            if (reg.waiting) {
-                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    <script>
+        async function setupProxy() {
+            if (!('serviceWorker' in navigator)) {
+                console.error("SYS_ERR: Service Workers are not supported in this browser.");
+                return;
             }
 
-            // 3. Initialize BareMux Connection
-            if (window.BareMux) {
-                // Ensure the path to bareworker matches your file structure
-                const conn = new window.BareMux.BareMuxConnection("./bareworker.js");
+            try {
+                console.log("SYS_LOG: Initializing worker registration pipeline...");
                 
-                // Standardize the WISP URL (Remove trailing slash for the transport)
-                let wispUrl = localStorage.getItem("proxServer") || "wss://wisp.mercurywork.shop";
-                if (wispUrl.endsWith('/')) wispUrl = wispUrl.slice(0, -1);
+                // 1. Register Scramjet SW under its explicit scope directory
+                const reg = await navigator.serviceWorker.register('./scramjet/sw.js', { scope: './scramjet/' });
                 
-                await conn.setTransport(
-                    "https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@2.1.28/dist/index.mjs", 
-                    [{ wisp: wispUrl }]
-                );
+                // 2. Force activation if there's an incoming update waiting
+                if (reg.waiting) {
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
 
-                // 4. Send config to the SW
-                if (navigator.serviceWorker.controller) {
-                    navigator.serviceWorker.controller.postMessage({
-                        type: "config",
-                        wispurl: wispUrl,
-                        autoswitch: true
+                // 3. Explicitly await readiness state
+                await navigator.serviceWorker.ready;
+                
+                // 4. Ensure window client is actively controlled by the container scope
+                if (!navigator.serviceWorker.controller) {
+                    console.log("SYS_LOG: Reloading worker configuration context...");
+                    await new Promise((resolve) => {
+                        navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
                     });
                 }
-                
-                console.log("GoatX Proxy: Fully Initialized");
-            }
-        } catch (err) {
-            console.error("Proxy Setup Failed:", err);
-        }
-    }
 
-    // Run setup after the page loads to prevent blocking the UI
-    window.addEventListener('load', setupProxy);
-</script>
+                // 5. Initialize BareMux Connection
+                if (window.BareMux) {
+                    const conn = new window.BareMux.BareMuxConnection("./scramjet/bareworker.js");
+                    
+                    let wispUrl = localStorage.getItem("proxServer") || "wss://wisp.mercurywork.shop";
+                    if (wispUrl.endsWith('/')) wispUrl = wispUrl.slice(0, -1);
+                    
+                    await conn.setTransport(
+                        "https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@2.1.28/dist/index.mjs", 
+                        [{ wisp: wispUrl }]
+                    );
+
+                    // 6. Dispatch handshake operational configuration parameters
+                    if (navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({
+                            type: "config",
+                            wispurl: wispUrl,
+                            autoswitch: true
+                        });
+                    }
+                    
+                    console.log("SYS_SUCCESS: Proxy pipeline completely engaged.");
+                }
+            } catch (err) {
+                console.error("SYS_CRITICAL_ERR: Proxy initialization failed ->", err);
+            }
+        }
+
+        window.addEventListener('load', setupProxy);
+    </script>
 
     <style>
         :root {
