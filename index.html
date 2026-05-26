@@ -142,23 +142,28 @@
             margin: 0 auto 40px auto;
         }
 
-        .search-bar {
+        .browse-btn {
             width: 100%;
             box-sizing: border-box;
             padding: 15px;
             border: 1px solid var(--matrix-green);
             background: rgba(0, 20, 0, 0.6);
-            color: #fff;
+            color: var(--matrix-green);
             font-family: 'Share Tech Mono', monospace;
             font-size: 1.2rem;
+            cursor: pointer;
             outline: none;
             text-shadow: 0 0 5px var(--matrix-green);
             box-shadow: inset 0 0 5px rgba(0, 255, 65, 0.3);
             text-align: center;
+            letter-spacing: 2px;
+            transition: all 0.2s ease;
         }
 
-        .search-bar:focus {
+        .browse-btn:hover {
+            background: rgba(0, 255, 65, 0.1);
             box-shadow: var(--glow-effect), inset 0 0 5px rgba(0, 255, 65, 0.5);
+            color: #fff;
         }
 
         .nav-row {
@@ -207,7 +212,7 @@
         <h1>GoatX</h1>
         
         <div class="search-wrapper">
-            <input type="text" id="home-search" class="search-bar" placeholder="await_query..." autocomplete="off">
+            <button id="browse-web-btn" class="browse-btn">browse_web</button>
         </div>
 
         <div class="nav-row">
@@ -244,7 +249,6 @@
         const matrixChars = "アカサタナハマヤラワガザダバパイウエオカキクケコスシスセソ1234567890".split("");
         const fontSize = 16;
         
-        // Dynamically recalculate columns array size on load/resize to prevent memory leaks or out-of-bounds drops
         let columns = Math.floor(canvas.width / fontSize);
         let dropPositions = Array(columns).fill(1);
 
@@ -286,7 +290,7 @@
     </script>
 
     <script>
-        const homeSearch = document.getElementById('home-search');
+        const browseBtn = document.getElementById('browse-web-btn');
 
         function search(query) {
             const searchEngine = "https://www.google.com/search?q=";
@@ -296,18 +300,16 @@
                 if (!url.startsWith('http://') && !url.startsWith('https://')) {
                     url = 'https://' + url;
                 }
-                window.location.href = `${window.location.origin}/web/#${url}`;
+                window.location.href = `${window.location.origin}/scramjet/#${url}`;
             } else {
-                window.location.href = `${window.location.origin}/web/#${searchEngine}${encodeURIComponent(query)}`;
+                window.location.href = `${window.location.origin}/scramjet/#${searchEngine}${encodeURIComponent(query)}`;
             }
         }
 
-        homeSearch.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const query = homeSearch.value.trim();
-                if (query) {
-                    search(query);
-                }
+        browseBtn.addEventListener('click', () => {
+            const query = prompt("Enter a URL or search query:");
+            if (query && query.trim()) {
+                search(query.trim());
             }
         });
     </script>
