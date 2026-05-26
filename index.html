@@ -15,52 +15,60 @@
     <script>
         async function setupProxy() {
             if (!('serviceWorker' in navigator)) {
-                console.error("Service Workers are not supported in this browser.");
+                console.error("Service Workers are not supported.");
                 return;
             }
 
             try {
-                // 1. Register the Service Worker directly in the current path context
+                // 1. Register the Service Worker in the root context
                 const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
                 
-                // 2. Ensure the SW is active and controlling the page
-                await navigator.serviceWorker.ready;
-                
-                // Force activation if there's a waiting worker
+                // 2. Force quick activation patterns
                 if (reg.waiting) {
                     reg.waiting.postMessage({ type: 'SKIP_WAITING' });
                 }
 
-                // 3. Initialize BareMux Connection
-                if (window.BareMux) {
+                // 3. CRITICAL: Wait completely for the worker lifecycle to finish readying
+                const activeRegistration = await navigator.serviceWorker.ready;
+                
+                // 4. If the page isn't currently controlled, wait for the controller change event
+                if (!navigator.serviceWorker.controller) {
+                    await new Promise((resolve) => {
+                        navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+                    });
+                }
+
+                // 5. Build and configure BareMux connection pipeline safely
+                if (window.BareMux && navigator.serviceWorker.controller) {
+                    console.log("Initializing active BareMux channels...");
                     const conn = new window.BareMux.BareMuxConnection("./bareworker.js");
                     
-                    // Standardize the WISP URL (Remove trailing slash for the transport)
                     let wispUrl = localStorage.getItem("proxServer") || "wss://wisp.mercurywork.shop";
                     if (wispUrl.endsWith('/')) wispUrl = wispUrl.slice(0, -1);
                     
+                    // Await the epoxy transport script to avoid partial byte registrations
                     await conn.setTransport(
                         "https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@2.1.28/dist/index.mjs", 
                         [{ wisp: wispUrl }]
                     );
 
-                    // 4. Send config to the SW
-                    if (navigator.serviceWorker.controller) {
-                        navigator.serviceWorker.controller.postMessage({
-                            type: "config",
-                            wispurl: wispUrl,
-                            autoswitch: true
-                        });
-                    }
+                    // 6. Direct handshake registration message to prevent the 82-byte stub failure
+                    navigator.serviceWorker.controller.postMessage({
+                        type: "config",
+                        wispurl: wispUrl,
+                        autoswitch: true
+                    });
                     
-                    console.log("NETLII Proxy: Fully Initialized");
+                    console.log("NETLII Proxy: Handshake committed and live.");
+                } else {
+                    console.warn("Retrying initialization hook sequence...");
+                    setTimeout(setupProxy, 250);
                 }
             } catch (err) {
-                console.error("Proxy Setup Failed:", err);
+                console.error("Proxy Initialization Aborted:", err);
             }
         }
 
-        // Run setup after the page loads to prevent blocking the UI
         window.addEventListener('load', setupProxy);
     </script>
 
@@ -86,7 +94,6 @@
             justify-content: center;
         }
 
-        /* Matrix Rain Canvas Background */
         #matrix-bg {
             position: fixed;
             top: 0;
@@ -96,7 +103,6 @@
             z-index: -1;
         }
 
-        /* Ultimate Hacker Terminal Container */
         .terminal-panel {
             background: var(--terminal-bg);
             border: 2px solid var(--matrix-green);
@@ -128,7 +134,6 @@
             letter-spacing: 4px;
         }
 
-        /* Custom Input Prompt Style */
         .search-wrapper {
             position: relative;
             width: 90%;
@@ -234,7 +239,7 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        const matrixChars = "アカサタナハマヤラワガザダバパイウエオカキクケコスシスセソ1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ#$@%&*".split("");
+        const matrixChars = "アカサタナハマヤラワガザダバパイウエオカキクケコスシスセソ1234567890".split("");
         const fontSize = 16;
         let columns = canvas.width / fontSize;
         let dropPositions = Array(Math.floor(columns)).fill(1);
