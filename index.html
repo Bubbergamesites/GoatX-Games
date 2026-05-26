@@ -6,74 +6,6 @@
     <title>GoatX | Mainframe</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-
-    <script type="module">
-        import * as BareMux from "https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux/dist/index.mjs";
-        window.BareMux = BareMux;
-    </script>
-
-    <script>
-        async function setupProxy() {
-            if (!('serviceWorker' in navigator)) {
-                console.error("SYS_ERR: Service Workers are unsupported.");
-                return;
-            }
-
-            try {
-                // 1. Register the Service Worker at root context
-                const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-                
-                // 2. Force quick activation patterns if updating code
-                if (reg.waiting) {
-                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                }
-
-                // 3. Await readiness verification from the active worker instance
-                await navigator.serviceWorker.ready;
-                
-                // 4. Handle edge-case state where the client window lacks an active controller
-                if (!navigator.serviceWorker.controller) {
-                    await new Promise((resolve) => {
-                        navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
-                    });
-                }
-
-                // 5. Safely loop-wait only for BareMux asset resolution, avoiding recursive function nesting
-                while (!window.BareMux) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-
-                // 6. Ensure BareMux builds the payload channel now that states are completely verified
-                if (navigator.serviceWorker.controller) {
-                    console.log("SYS_LOG: Initializing active BareMux channels...");
-                    const conn = new window.BareMux.BareMuxConnection("./bareworker.js");
-                    
-                    let wispUrl = localStorage.getItem("proxServer") || "wss://wisp.mercurywork.shop";
-                    if (wispUrl.endsWith('/')) wispUrl = wispUrl.slice(0, -1);
-                    
-                    // Await full transport bundle registration to protect data integrity
-                    await conn.setTransport(
-                        "https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@2.1.28/dist/index.mjs", 
-                        [{ wisp: wispUrl }]
-                    );
-
-                    // 7. Direct full configuration payload to prevent the 82-byte baseline failure
-                    navigator.serviceWorker.controller.postMessage({
-                        type: "config",
-                        wispurl: wispUrl,
-                        autoswitch: true
-                    });
-                    
-                    console.log("SYS_SUCCESS: NETLII Proxy Handshake committed and live.");
-                }
-            } catch (err) {
-                console.error("SYS_CRITICAL: Proxy Initialization Aborted:", err);
-            }
-        }
-
-        window.addEventListener('load', setupProxy);
-    </script>
-
     <style>
         :root {
             --matrix-green: #00ff41;
@@ -143,6 +75,7 @@
         }
 
         .browse-btn {
+            display: block;
             width: 100%;
             box-sizing: border-box;
             padding: 15px;
@@ -151,13 +84,12 @@
             color: var(--matrix-green);
             font-family: 'Share Tech Mono', monospace;
             font-size: 1.2rem;
-            cursor: pointer;
-            outline: none;
-            text-shadow: 0 0 5px var(--matrix-green);
-            box-shadow: inset 0 0 5px rgba(0, 255, 65, 0.3);
+            text-decoration: none;
             text-align: center;
             letter-spacing: 2px;
             transition: all 0.2s ease;
+            text-shadow: 0 0 5px var(--matrix-green);
+            box-shadow: inset 0 0 5px rgba(0, 255, 65, 0.3);
         }
 
         .browse-btn:hover {
@@ -212,7 +144,7 @@
         <h1>GoatX</h1>
         
         <div class="search-wrapper">
-            <button id="browse-web-btn" class="browse-btn">browse_web</button>
+            <a href="./web/" class="browse-btn">browse_web</a>
         </div>
 
         <div class="nav-row">
@@ -287,31 +219,6 @@
             }
         }
         setInterval(drawMatrixRain, 33);
-    </script>
-
-    <script>
-        const browseBtn = document.getElementById('browse-web-btn');
-
-        function search(query) {
-            const searchEngine = "https://www.google.com/search?q=";
-            
-            if (query.includes('.') && !query.includes(' ')) {
-                let url = query;
-                if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                    url = 'https://' + url;
-                }
-                window.location.href = `${window.location.origin}/scramjet/#${url}`;
-            } else {
-                window.location.href = `${window.location.origin}/scramjet/#${searchEngine}${encodeURIComponent(query)}`;
-            }
-        }
-
-        browseBtn.addEventListener('click', () => {
-            const query = prompt("Enter a URL or search query:");
-            if (query && query.trim()) {
-                search(query.trim());
-            }
-        });
     </script>
 </body>
 </html>
