@@ -15,36 +15,27 @@
     <script>
         async function setupProxy() {
             if (!('serviceWorker' in navigator)) {
-                console.error("SYS_ERR: Service Workers are not supported in this browser.");
+                console.error("Service Workers are not supported in this browser.");
                 return;
             }
 
             try {
-                console.log("SYS_LOG: Initializing worker registration pipeline...");
+                // 1. Register the Service Worker directly in the current path context
+                const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
                 
-                // 1. Register Scramjet SW under its explicit scope directory
-                const reg = await navigator.serviceWorker.register('./scramjet/sw.js', { scope: './scramjet/' });
+                // 2. Ensure the SW is active and controlling the page
+                await navigator.serviceWorker.ready;
                 
-                // 2. Force activation if there's an incoming update waiting
+                // Force activation if there's a waiting worker
                 if (reg.waiting) {
                     reg.waiting.postMessage({ type: 'SKIP_WAITING' });
                 }
 
-                // 3. Explicitly await readiness state
-                await navigator.serviceWorker.ready;
-                
-                // 4. Ensure window client is actively controlled by the container scope
-                if (!navigator.serviceWorker.controller) {
-                    console.log("SYS_LOG: Reloading worker configuration context...");
-                    await new Promise((resolve) => {
-                        navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
-                    });
-                }
-
-                // 5. Initialize BareMux Connection
+                // 3. Initialize BareMux Connection
                 if (window.BareMux) {
-                    const conn = new window.BareMux.BareMuxConnection("./scramjet/bareworker.js");
+                    const conn = new window.BareMux.BareMuxConnection("./bareworker.js");
                     
+                    // Standardize the WISP URL (Remove trailing slash for the transport)
                     let wispUrl = localStorage.getItem("proxServer") || "wss://wisp.mercurywork.shop";
                     if (wispUrl.endsWith('/')) wispUrl = wispUrl.slice(0, -1);
                     
@@ -53,7 +44,7 @@
                         [{ wisp: wispUrl }]
                     );
 
-                    // 6. Dispatch handshake operational configuration parameters
+                    // 4. Send config to the SW
                     if (navigator.serviceWorker.controller) {
                         navigator.serviceWorker.controller.postMessage({
                             type: "config",
@@ -62,13 +53,14 @@
                         });
                     }
                     
-                    console.log("SYS_SUCCESS: Proxy pipeline completely engaged.");
+                    console.log("NETLII Proxy: Fully Initialized");
                 }
             } catch (err) {
-                console.error("SYS_CRITICAL_ERR: Proxy initialization failed ->", err);
+                console.error("Proxy Setup Failed:", err);
             }
         }
 
+        // Run setup after the page loads to prevent blocking the UI
         window.addEventListener('load', setupProxy);
     </script>
 
@@ -94,6 +86,7 @@
             justify-content: center;
         }
 
+        /* Matrix Rain Canvas Background */
         #matrix-bg {
             position: fixed;
             top: 0;
@@ -103,6 +96,7 @@
             z-index: -1;
         }
 
+        /* Ultimate Hacker Terminal Container */
         .terminal-panel {
             background: var(--terminal-bg);
             border: 2px solid var(--matrix-green);
@@ -134,6 +128,7 @@
             letter-spacing: 4px;
         }
 
+        /* Custom Input Prompt Style */
         .search-wrapper {
             position: relative;
             width: 90%;
